@@ -1,7 +1,7 @@
 use core::starknet::{ContractAddress, ClassHash};
 
 #[starknet::interface]
-pub trait IEvent<TContractState> {
+pub trait IFundManager<TContractState> {
     // EXTERNAL FUNCTIONS
     fn new_support_funds( ref self: TContractState,
         name: ByteArray,
