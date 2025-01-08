@@ -1,4 +1,3 @@
-
 use starknet::ContractAddress;
 
 #[starknet::contract]
@@ -14,7 +13,7 @@ pub mod FundManager {
         storage::{Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry}
     };
 
-     // ***************************************************************************************
+    // ***************************************************************************************
     //                            STORAGE
     // ***************************************************************************************
     #[storage]

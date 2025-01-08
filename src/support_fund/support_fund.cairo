@@ -1,4 +1,3 @@
-
 use starknet::ContractAddress;
 
 #[starknet::contract]
@@ -10,20 +9,20 @@ pub mod SupportFund {
     use core::traits::TryInto;
     use core::starknet::{
         ContractAddress, get_caller_address, syscalls::deploy_syscall, ClassHash,
-        get_block_timestamp,
-        contract_address_const,
-        get_contract_address,
+        get_block_timestamp, contract_address_const, get_contract_address,
         storage::{Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry}
     };
     use fundme::interfaces::ISupportFund::ISupportFund;
-      use fundme::base::errors::Errors::{
-        ZERO_ADDRESS_CALLER, NOT_OWNER, INSUFFICIENT_ALLOWANCE, USER_HAS_NOT_VOTED, WRONG_OWNER_ACTION, FUNDING_GOAL_REACH, USER_VOTED, OWNER_ACTION
+    use fundme::base::errors::Errors::{
+        ZERO_ADDRESS_CALLER, NOT_OWNER, INSUFFICIENT_ALLOWANCE, USER_HAS_NOT_VOTED,
+        WRONG_OWNER_ACTION, FUNDING_GOAL_REACH, USER_VOTED, OWNER_ACTION
     };
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
     // CONSTANTS
-   //  const STRK_TOKEN_ADDRESS: ByteArray = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
-     // ***************************************************************************************
+    //  const STRK_TOKEN_ADDRESS: ByteArray =
+    //  "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+    // ***************************************************************************************
     //                            STORAGE
     // ***************************************************************************************
     #[storage]
@@ -46,17 +45,17 @@ pub mod SupportFund {
     // *************************************************************************
     #[constructor]
     fn constructor(
-         ref self: ContractState,
-         id: u256,
-         owner: ContractAddress,
-         name: ByteArray,
-         reason: ByteArray,
-         goal: u256,
-         state: u256,
-         contact_handler: ByteArray,
-         fund_type: u256,
-         strk_token: ContractAddress,
-    ){
+        ref self: ContractState,
+        id: u256,
+        owner: ContractAddress,
+        name: ByteArray,
+        reason: ByteArray,
+        goal: u256,
+        state: u256,
+        contact_handler: ByteArray,
+        fund_type: u256,
+        strk_token: ContractAddress,
+    ) {
         self.id.write(id);
         self.owner.write(owner);
         self.name.write(name);
@@ -67,45 +66,45 @@ pub mod SupportFund {
         self.fund_type.write(fund_type);
         self.strk_token.write(strk_token);
     }
-     // *************************************************************************
+    // *************************************************************************
     //                            EXTERNALS
     // *************************************************************************
-      #[abi(embed_v0)]
-      impl SupportFundImpl of ISupportFund<ContractState> {
+    #[abi(embed_v0)]
+    impl SupportFundImpl of ISupportFund<ContractState> {
         // only owner can set support fund name
-         fn set_name(ref self: ContractState, name: ByteArray){
+        fn set_name(ref self: ContractState, name: ByteArray) {
             let caller = get_caller_address();
             assert(self.owner.read() == caller, WRONG_OWNER_ACTION);
             self.name.write(name);
-         }
-           fn set_goal(ref self: ContractState, goal_amount: u256){
-              let caller = get_caller_address();
-              assert(self.owner.read() != caller, WRONG_OWNER_ACTION);
-              self.goal_amount.write(goal_amount)
-           }
-          fn set_reason(ref self: ContractState, reason: ByteArray){
-              let caller = get_caller_address();
-              assert(self.owner.read() == caller, WRONG_OWNER_ACTION);
-              self.reason.write(reason)
-          } 
-          fn set_type(ref self: ContractState, fund_type: u256) {
+        }
+        fn set_goal(ref self: ContractState, goal_amount: u256) {
+            let caller = get_caller_address();
+            assert(self.owner.read() != caller, WRONG_OWNER_ACTION);
+            self.goal_amount.write(goal_amount)
+        }
+        fn set_reason(ref self: ContractState, reason: ByteArray) {
+            let caller = get_caller_address();
+            assert(self.owner.read() == caller, WRONG_OWNER_ACTION);
+            self.reason.write(reason)
+        }
+        fn set_type(ref self: ContractState, fund_type: u256) {
             let caller = get_caller_address();
             assert(self.owner.read() == caller, WRONG_OWNER_ACTION);
             self.fund_type.write(fund_type);
-          }
-           fn set_contact_handler(ref self: ContractState, contact_handler: ByteArray) {
-             let caller = get_caller_address();
-             assert(self.owner.read() == caller, WRONG_OWNER_ACTION);
-             self.contact_handler.write(contact_handler);
-           }
-         fn up_vote(ref self: ContractState) {
+        }
+        fn set_contact_handler(ref self: ContractState, contact_handler: ByteArray) {
+            let caller = get_caller_address();
+            assert(self.owner.read() == caller, WRONG_OWNER_ACTION);
+            self.contact_handler.write(contact_handler);
+        }
+        fn up_vote(ref self: ContractState) {
             let caller = get_caller_address();
             let caller_vote = self.support_fund_voters.read(caller);
-            assert(caller_vote== 0, USER_VOTED);
+            assert(caller_vote == 0, USER_VOTED);
             self.support_fund_voters.write(caller, 1);
             self.support_fund_votes.write(self.support_fund_votes.read() + 1);
             // EMIT EVENT HERE
-          }
+        }
         fn down_vote(ref self: ContractState) {
             let caller = get_caller_address();
             let caller_vote = self.support_fund_voters.read(caller);
@@ -113,28 +112,68 @@ pub mod SupportFund {
             self.support_fund_voters.write(caller, 0);
             self.support_fund_votes.write(self.support_fund_votes.read() - 1);
             // EMIT EVENT HERE
-        }  
-         fn add_receive_donation(ref self: ContractState, amount: u256) {
-           
+        }
+        fn add_receive_donation(ref self: ContractState, amount: u256) {
             let current_balance = self.get_current_goal_state();
             let goal_amount = self.goal_amount.read();
             assert(current_balance >= goal_amount, FUNDING_GOAL_REACH);
             // if user give allowance for the contract to spend that amount
             assert(
-                self.token_dispatcher()
+                self
+                    .token_dispatcher()
                     .allowance(get_caller_address(), get_contract_address()) >= amount,
                 INSUFFICIENT_ALLOWANCE,
             );
             // change the user
-            self.token_dispatcher().transfer_from(get_caller_address(), get_contract_address(), amount);
-            
-         }
+            self
+                .token_dispatcher()
+                .transfer_from(get_caller_address(), get_contract_address(), amount);
+        }
 
-         // GETTERS
-         fn get_current_goal_state(self: @ContractState) -> u256 {
+        fn withdraw(ref self: ContractState) {
+            let caller = get_caller_address();
+            assert(self.owner.read() == caller, NOT_OWNER);
+            let withdrawn_amount = self.get_current_goal_state();
+            // approve amount
+            self.token_dispatcher().approve(self.get_owner(), withdrawn_amount);
+            self.token_dispatcher().transfer(self.get_owner(), withdrawn_amount);
+            // emit event
+
+        }
+
+        // GETTERS
+        fn get_current_goal_state(self: @ContractState) -> u256 {
             self.token_dispatcher().balance_of(get_contract_address())
-         }
-      }
+        }
+
+        fn get_id(self: @ContractState) -> u256 {
+            self.id.read()
+        }
+        fn get_owner(self: @ContractState) -> ContractAddress {
+            self.owner.read()
+        }
+
+        fn get_name(self: @ContractState) -> ByteArray {
+            self.name.read()
+        }
+
+        fn get_reason(self: @ContractState) -> ByteArray {
+            self.reason.read()
+        }
+
+        fn get_goal_amount(self: @ContractState) -> u256 {
+            self.goal_amount.read()
+        }
+        fn get_contact_handler(self: @ContractState) -> ByteArray {
+            self.contact_handler.read()
+        }
+        fn get_type(self: @ContractState) -> u256 {
+            self.fund_type.read()
+        }
+        fn is_owner(self: @ContractState) -> bool {
+            return (self.owner.read() == get_caller_address());
+        }
+    }
 
     // *************************************************************************
     //                            INTERNALS
@@ -142,9 +181,7 @@ pub mod SupportFund {
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn token_dispatcher(self: @ContractState) -> IERC20Dispatcher {
-            IERC20Dispatcher {
-                contract_address: self.strk_token.read()
-            }
+            IERC20Dispatcher { contract_address: self.strk_token.read() }
         }
     }
 }
